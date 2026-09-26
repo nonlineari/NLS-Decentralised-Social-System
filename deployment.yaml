@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: multimedia-chat-bridge
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: multimedia-chat-bridge
+  template:
+    metadata:
+      labels:
+        app: multimedia-chat-bridge
+    spec:
+      containers:
+      - name: bridge
+        image: multimedia-chat-bridge:latest
+        ports:
+        - containerPort: 80     # nginx web interface
+        - containerPort: 5000   # Flask chat API
+        - containerPort: 9000   # OSC from Ableton
+        - containerPort: 8000   # Prometheus metrics
+        env:
+        - name: ICQ_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: icq-secrets
+              key: token
+        - name: TELEGRAM_API_ID
+          valueFrom:
+            secretKeyRef:
+              name: telegram-secrets
+              key: api_id
+        - name: TELEGRAM_API_HASH
+          valueFrom:
+            secretKeyRef:
+              name: telegram-secrets
+              key: api_hash
+        - name: TELEGRAM_PHONE
+          valueFrom:
+            secretKeyRef:
+              name: telegram-secrets
+              key: phone
+        - name: WEB3_INFURA_KEY
+          valueFrom:
+            secretKeyRef:
+              name: web3-secrets
+              key: infura_key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: multimedia-chat-service
+spec:
+  selector:
+    app: multimedia-chat-bridge
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: web
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+      name: chat-api
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+      name: osc
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+      name: metrics
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    server {
+        listen 80;
+        root /app;
+        index chat_interface.html;
+
+        location / {
+            try_files $uri $uri/ =404;
+        }
+
+        location /socket.io {
+            proxy_pass http://localhost:5000;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection "upgrade";
+        }
+
+        location /chat/ {
+            proxy_pass http://localhost:5000/;
+        }
+    } on setup

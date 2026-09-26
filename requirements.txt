@@ -1,0 +1,34 @@
+# Web3Cookie & BitChat System Requirements
+# Core Web3 and blockchain libraries
+web3>=6.0.0
+eth-account>=0.8.0
+
+# OSC communication for Ableton/VDMX integration
+python-osc>=1.8.0
+
+# Web server and real-time communication
+flask>=2.3.0
+flask-socketio>=5.3.0
+python-socketio>=5.8.0
+
+# HTTP requests and web scraping
+requests>=2.31.0
+requests-html>=0.10.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Prometheus monitoring
+prometheus-client>=0.17.0
+
+# Additional utilities
+# Note: json, time, threading, pathlib, asyncio are built-in Python modules
+
+# Development and testing
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Optional: Telegram integration (commented out)
+# telethon>=1.28.0
+
+# Optional: WebSocket support
+websocket-client>=1.6.0

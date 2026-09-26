@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICQ Chat - Ableton VDMX Web3 Bridge</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            margin: 0;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .chat-container {
+            display: flex;
+            height: 80vh;
+        }
+        .chat-messages {
+            flex: 1;
+            border: 1px solid #00ff00;
+            padding: 10px;
+            overflow-y: auto;
+            background: #000;
+            margin-right: 20px;
+        }
+        .chat-input {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 10px;
+            background: #000;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+        }
+        button {
+            padding: 10px 20px;
+            background: #00ff00;
+            border: none;
+            color: #000;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 5px;
+            border-left: 3px solid #00ff00;
+        }
+        .message.system {
+            border-left-color: #ff6600;
+            color: #ff6600;
+        }
+        .message.icq {
+            border-left-color: #0066ff;
+            color: #0066ff;
+        }
+        .message.midi {
+            border-left-color: #ff0066;
+            color: #ff0066;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .control-button {
+            margin-right: 10px;
+            padding: 5px 10px;
+            background: #333;
+            border: 1px solid #00ff00;
+            color: #00ff00;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>ICQ Chat Bridge - Ableton ↔ VDMX ↔ Web3</h1>
+    <div class="controls">
+        <button class="control-button" onclick="sendCommand('/vdmx play')">VDMX Play</button>
+        <button class="control-button" onclick="sendCommand('/vdmx stop')">VDMX Stop</button>
+        <button class="control-button" onclick="sendCommand('/ableton play')">Ableton Play</button>
+        <button class="control-button" onclick="sendCommand('/nls status')">NLS Status</button>
+        <button class="control-button" onclick="sendCommand('/browse https://example.com')">Browse Site</button>
+        <button class="control-button" onclick="sendCommand('/cursor help')">Cursor Help</button>
+    </div>
+
+    <div class="chat-container">
+        <div id="messages" class="chat-messages"></div>
+    </div>
+
+    <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Type your message or command (e.g., /vdmx play, /nls query, /browse url)" onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        const socket = io();
+        const messagesDiv = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+
+        socket.on('connect', function() {
+            addMessage('System', 'Connected to chat server', 'system');
+        });
+
+        socket.on('disconnect', function() {
+            addMessage('System', 'Disconnected from chat server', 'system');
+        });
+
+        socket.on('chat_message', function(data) {
+            let messageClass = 'message';
+            if (data.source === 'system') messageClass += ' system';
+            else if (data.source === 'icq') messageClass += ' icq';
+            else if (data.source === 'midi') messageClass += ' midi';
+
+            addMessage(data.sender, data.message, messageClass);
+        });
+
+        function addMessage(sender, message, className = 'message') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = className;
+            messageDiv.innerHTML = `<strong>${sender}:</strong> ${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (message) {
+                socket.emit('chat_message', {
+                    message: message,
+                    sender: 'Web_User_' + Math.floor(Math.random() * 1000)
+                });
+                messageInput.value = '';
+            }
+        }
+
+        function sendCommand(command) {
+            socket.emit('chat_message', {
+                message: command,
+                sender: 'Web_User_Command'
+            });
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // Load chat history on page load
+        window.onload = function() {
+            fetch('/chat/history')
+                .then(response => response.json())
+                .then(history => {
+                    history.forEach(msg => {
+                        let messageClass = 'message';
+                        if (msg.source === 'system') messageClass += ' system';
+                        else if (msg.source === 'icq') messageClass += ' icq';
+                        else if (msg.source === 'midi') messageClass += ' midi';
+
+                        addMessage(msg.sender, msg.message, messageClass);
+                    });
+                })
+                .catch(error => console.error('Error loading chat history:', error));
+        };
+
+        // Auto-scroll to bottom when new messages arrive
+        const observer = new MutationObserver(function() {
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+        observer.observe(messagesDiv, { childList: true });
+    </script>
+</body>
+</html>

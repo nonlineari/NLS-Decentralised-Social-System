@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialUnits: Decentralized Social Network Algorithms</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 20px 0;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-card h3 {
+            margin-top: 0;
+            color: #ff6b6b;
+            font-size: 0.9em;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4ecdc4;
+            margin: 10px 0;
+        }
+
+        .sections {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+
+        .section {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #4ecdc4;
+            padding-bottom: 10px;
+        }
+
+        .unit-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .unit-card {
+            background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .unit-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .unit-card h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 0.9em;
+        }
+
+        .unit-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #e17055;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 8px 4px;
+            transition: all 0.3s ease;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            font-size: 14px;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .connection-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        .connection-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 6px;
+            padding: 8px;
+            margin: 5px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .connection-strength {
+            font-weight: bold;
+            color: #4ecdc4;
+        }
+
+        .recommendation-item {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+            border-radius: 8px;
+            padding: 15px;
+            margin: 8px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+
+        .recommendation-score {
+            float: right;
+            background: #4ecdc4;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .alert.success {
+            background: rgba(76, 237, 196, 0.2);
+            border: 1px solid #4ecdc4;
+            color: #2d7d6b;
+        }
+
+        .alert.error {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid #ff6b6b;
+            color: #c44545;
+        }
+
+        .alert.info {
+            background: rgba(255, 230, 109, 0.2);
+            border: 1px solid #ffe66d;
+            color: #b7950b;
+        }
+
+        .algorithm-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .algorithm-btn {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid #4ecdc4;
+            color: #4ecdc4;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .algorithm-btn.active {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        .algorithm-btn:hover {
+            background: #4ecdc4;
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .sections {
+                grid-template-columns: 1fr;
+            }
+
+            .unit-grid {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔗 SocialUnits</h1>
+            <p class="subtitle">Decentralized Social Network Algorithms Without Traditional Cookies</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Social Units Created</h3>
+                <div class="stat-value" id="units-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Active Connections</h3>
+                <div class="stat-value" id="connections-count">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Engagement Score</h3>
+                <div class="stat-value" id="engagement-score">0</div>
+            </div>
+            <div class="stat-card">
+                <h3>Algorithm Accuracy</h3>
+                <div class="stat-value" id="algorithm-accuracy">85%</div>
+            </div>
+        </div>
+
+        <div class="sections">
+            <!-- Social Units Management -->
+            <div class="section">
+                <h2>🎴 Social Units</h2>
+                <p>Create and manage decentralized social behavior units that replace traditional social network algorithms.</p>
+
+                <div class="unit-grid">
+                    <div class="unit-card" onclick="createUnit('BEHAVIOR_PATTERN')">
+                        <h4>Behavior Pattern</h4>
+                        <div class="unit-value" id="behavior-value">0</div>
+                    </div>
+                    <div class="unit-card" onclick="createUnit('CONTENT_PREFERENCE')">
+                        <h4>Content Pref</h4>
+                        <div class="unit-value" id="content-value">0</div>
+                    </div>
+                    <div class="unit-card" onclick="createUnit('SOCIAL_CONNECTION')">
+                        <h4>Social Conn</h4>
+                        <div class="unit-value" id="social-value">0</div>
+                    </div>
+                    <div class="unit-card" onclick="createUnit('ENGAGEMENT_METRIC')">
+                        <h4>Engagement</h4>
+                        <div class="unit-value" id="engagement-value">0</div>
+                    </div>
+                </div>
+
+                <button class="btn" onclick="refreshUserUnits()">Refresh Units</button>
+                <button class="btn" onclick="getEngagementScore()">Update Engagement</button>
+            </div>
+
+            <!-- Social Connections -->
+            <div class="section">
+                <h2>🤝 Social Connections</h2>
+                <p>Build decentralized social graphs with blockchain-verified connections.</p>
+
+                <div class="input-group">
+                    <label for="connection-address">User Address:</label>
+                    <input type="text" id="connection-address" placeholder="0x...">
+                </div>
+
+                <div class="input-group">
+                    <label for="connection-type">Connection Type:</label>
+                    <select id="connection-type">
+                        <option value="1">Friend</option>
+                        <option value="2">Follow</option>
+                        <option value="3">Interact</option>
+                    </select>
+                </div>
+
+                <button class="btn" onclick="createConnection()">Create Connection</button>
+                <button class="btn" onclick="findSimilarUsers()">Find Similar Users</button>
+
+                <div class="connection-list" id="connections-list">
+                    <!-- Connections will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Recommendation Engine -->
+            <div class="section">
+                <h2>🎯 Decentralized Recommendations</h2>
+                <p>Social network algorithms powered by blockchain instead of centralized servers.</p>
+
+                <div class="algorithm-selector">
+                    <button class="algorithm-btn active" onclick="setAlgorithm('content_recommendation')">Content</button>
+                    <button class="algorithm-btn" onclick="setAlgorithm('friend_suggestion')">Friends</button>
+                    <button class="algorithm-btn" onclick="setAlgorithm('trend_analysis')">Trends</button>
+                </div>
+
+                <div class="input-group">
+                    <label for="candidate-items">Candidate Items (comma-separated IDs):</label>
+                    <textarea id="candidate-items" placeholder="1, 2, 3, 4, 5">1, 2, 3, 4, 5, 6, 7, 8, 9, 10</textarea>
+                </div>
+
+                <button class="btn" onclick="generateRecommendations()">Generate Recommendations</button>
+
+                <div id="recommendations-list">
+                    <!-- Recommendations will appear here -->
+                </div>
+            </div>
+
+            <!-- Behavior Tracking -->
+            <div class="section">
+                <h2>📊 Behavior Tracking</h2>
+                <p>Anonymous behavioral data collection for algorithm improvement (no cookies required).</p>
+
+                <div class="input-group">
+                    <label for="behavior-type">Behavior Type:</label>
+                    <select id="behavior-type">
+                        <option value="page_view">Page View</option>
+                        <option value="content_click">Content Click</option>
+                        <option value="social_interaction">Social Interaction</option>
+                        <option value="time_spent">Time Spent</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label for="behavior-data">Behavior Data (JSON):</label>
+                    <textarea id="behavior-data">{"content_id": "example_123", "interaction_type": "click", "duration": 45}</textarea>
+                </div>
+
+                <button class="btn" onclick="recordBehavior()">Record Behavior</button>
+                <button class="btn" onclick="updateAlgorithmScore()">Update Algorithm</button>
+
+                <div style="margin-top: 20px;">
+                    <h4>Live Behavior Data:</h4>
+                    <div id="behavior-display" style="background: rgba(0,0,0,0.05); padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px;">
+                        Click around, scroll, and interact to see behavior tracking in action...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include the SocialUnits Tracker -->
+    <script src="social_units_tracker.js"></script>
+    <script src="web3_cookie_tracker.js"></script>
+
+    <script>
+        let currentAlgorithm = 'content_recommendation';
+        let userUnits = [];
+        let socialConnections = [];
+
+        // DOM Elements
+        const unitsCount = document.getElementById('units-count');
+        const connectionsCount = document.getElementById('connections-count');
+        const engagementScore = document.getElementById('engagement-score');
+        const algorithmAccuracy = document.getElementById('algorithm-accuracy');
+        const connectionsList = document.getElementById('connections-list');
+        const recommendationsList = document.getElementById('recommendations-list');
+        const behaviorDisplay = document.getElementById('behavior-display');
+
+        // Initialize the demo
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize trackers
+            initializeTrackers();
+
+            // Set up behavior tracking display
+            setupBehaviorTracking();
+
+            // Load initial data
+            refreshUserUnits();
+            updateStats();
+
+            // Simulate some initial activity
+            setTimeout(() => {
+                simulateUserActivity();
+            }, 2000);
+        });
+
+        async function initializeTrackers() {
+            // SocialUnits tracker will initialize automatically
+            // Web3Cookie tracker will also initialize
+
+            // Wait for both to be ready
+            await waitForTrackers();
+            console.log('All trackers initialized');
+        }
+
+        async function waitForTrackers() {
+            return new Promise((resolve) => {
+                const checkTrackers = () => {
+                    if (typeof window.socialUnitsTracker !== 'undefined' &&
+                        typeof window.web3CookieTracker !== 'undefined') {
+                        resolve();
+                    } else {
+                        setTimeout(checkTrackers, 500);
+                    }
+                };
+                checkTrackers();
+            });
+        }
+
+        function setupBehaviorTracking() {
+            let clickCount = 0;
+            let scrollCount = 0;
+            let lastScrollY = window.scrollY;
+
+            document.addEventListener('click', () => {
+                clickCount++;
+                updateBehaviorDisplay({ clicks: clickCount });
+            });
+
+            document.addEventListener('scroll', () => {
+                if (Math.abs(window.scrollY - lastScrollY) > 50) {
+                    scrollCount++;
+                    lastScrollY = window.scrollY;
+                    updateBehaviorDisplay({ scrolls: scrollCount, scrollY: window.scrollY });
+                }
+            });
+
+            // Update display periodically
+            setInterval(() => {
+                updateBehaviorDisplay({
+                    timeOnPage: Math.floor((Date.now() - performance.timing.navigationStart) / 1000),
+                    viewport: `${window.innerWidth}x${window.innerHeight}`
+                });
+            }, 5000);
+        }
+
+        function updateBehaviorDisplay(data) {
+            const timestamp = new Date().toLocaleTimeString();
+            const dataStr = Object.entries(data)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join(', ');
+
+            behaviorDisplay.innerHTML = `[${timestamp}] ${dataStr}<br>` + behaviorDisplay.innerHTML;
+
+            // Keep only last 10 entries
+            const lines = behaviorDisplay.innerHTML.split('<br>');
+            if (lines.length > 10) {
+                behaviorDisplay.innerHTML = lines.slice(0, 10).join('<br>');
+            }
+        }
+
+        function simulateUserActivity() {
+            // Simulate some user activity for demo purposes
+            const activities = [
+                () => updateBehaviorDisplay({ simulated: 'page_view', content: 'article_123' }),
+                () => updateBehaviorDisplay({ simulated: 'social_like', target: 'user_456' }),
+                () => updateBehaviorDisplay({ simulated: 'content_share', item: 'track_789' }),
+                () => updateBehaviorDisplay({ simulated: 'time_spent', duration: 120 })
+            ];
+
+            activities.forEach((activity, index) => {
+                setTimeout(activity, index * 3000);
+            });
+        }
+
+        // SocialUnits API Functions
+        async function createUnit(unitType) {
+            const unitTypeMap = {
+                'BEHAVIOR_PATTERN': 0,
+                'CONTENT_PREFERENCE': 1,
+                'SOCIAL_CONNECTION': 2,
+                'ENGAGEMENT_METRIC': 3
+            };
+
+            const unitTypeNum = unitTypeMap[unitType];
+            const metadataURI = `ipfs://demo/${Date.now()}/${unitType.toLowerCase()}`;
+            const initialValue = Math.floor(Math.random() * 100) + 50;
+
+            try {
+                const response = await fetch('/socialunits/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        unit_type: unitTypeNum,
+                        metadata_uri: metadataURI,
+                        initial_value: initialValue
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('success', `${unitType} SocialUnit created! Token ID: ${result.token_id}`);
+                    refreshUserUnits();
+                    updateStats();
+                } else {
+                    showAlert('error', result.error);
+                }
+            } catch (error) {
+                showAlert('error', 'Failed to create SocialUnit: ' + error.message);
+            }
+        }
+
+        async function refreshUserUnits() {
+            // In a real implementation, we'd fetch user's units from the blockchain
+            // For demo purposes, we'll simulate some units
+            userUnits = [
+                { id: 1, type: 'BEHAVIOR_PATTERN', value: Math.floor(Math.random() * 100) },
+                { id: 2, type: 'CONTENT_PREFERENCE', value: Math.floor(Math.random() * 100) },
+                { id: 3, type: 'SOCIAL_CONNECTION', value: Math.floor(Math.random() * 100) },
+                { id: 4, type: 'ENGAGEMENT_METRIC', value: Math.floor(Math.random() * 100) }
+            ];
+
+            // Update UI
+            document.getElementById('behavior-value').textContent = userUnits[0].value;
+            document.getElementById('content-value').textContent = userUnits[1].value;
+            document.getElementById('social-value').textContent = userUnits[2].value;
+            document.getElementById('engagement-value').textContent = userUnits[3].value;
+
+            unitsCount.textContent = userUnits.length;
+        }
+
+        async function getEngagementScore() {
+            if (typeof window.web3CookieTracker === 'undefined') {
+                showAlert('error', 'Web3Cookie tracker not available');
+                return;
+            }
+
+            try {
+                // Use the connected account or a demo address
+                const userAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'; // Demo address
+
+                const response = await fetch(`/socialunits/engagement/${userAddress}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    engagementScore.textContent = result.engagement_score;
+                    showAlert('success', `Engagement Score: ${result.engagement_score}`);
+                } else {
+                    showAlert('error', result.error);
+                }
+            } catch (error) {
+                showAlert('error', 'Failed to get engagement score: ' + error.message);
+            }
+        }
+
+        async function createConnection() {
+            const userAddress = document.getElementById('connection-address').value;
+            const connectionType = parseInt(document.getElementById('connection-type').value);
+
+            if (!userAddress) {
+                showAlert('error', 'Please enter a user address');
+                return;
+            }
+
+            try {
+                const response = await fetch('/socialunits/connection/create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_b: userAddress,
+                        connection_type: connectionType
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showAlert('success', 'Social connection created!');
+                    socialConnections.push({
+                        address: userAddress,
+                        type: connectionType,
+                        strength: 100
+                    });
+                    updateConnectionsDisplay();
+                } else {
+                    showAlert('error', result.error);
+                }
+            } catch (error) {
+                showAlert('error', 'Failed to create connection: ' + error.message);
+            }
+        }
+
+        async function findSimilarUsers() {
+            const userAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'; // Demo address
+
+            try {
+                const response = await fetch(`/socialunits/similar/${userAddress}?max_results=5`);
+                const result = await response.json();
+
+                if (result.success) {
+                    const similarUsers = result.similar_users.slice(0, 3);
+                    showAlert('info', `Found ${similarUsers.length} similar users: ${similarUsers.join(', ').substring(0, 20)}...`);
+                } else {
+                    showAlert('error', result.error);
+                }
+            } catch (error) {
+                showAlert('error', 'Failed to find similar users: ' + error.message);
+            }
+        }
+
+        function updateConnectionsDisplay() {
+            connectionsList.innerHTML = '';
+            socialConnections.forEach(conn => {
+                const connectionDiv = document.createElement('div');
+                connectionDiv.className = 'connection-item';
+                connectionDiv.innerHTML = `
+                    <span>${conn.address.substring(0, 10)}...</span>
+                    <span class="connection-strength">${conn.strength}</span>
+                `;
+                connectionsList.appendChild(connectionDiv);
+            });
+
+            connectionsCount.textContent = socialConnections.length;
+        }
+
+        function setAlgorithm(algorithmId) {
+            currentAlgorithm = algorithmId;
+
+            // Update button states
+            document.querySelectorAll('.algorithm-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        async function generateRecommendations() {
+            const candidateItems = document.getElementById('candidate-items').value
+                .split(',')
+                .map(item => parseInt(item.trim()))
+                .filter(item => !isNaN(item));
+
+            if (candidateItems.length === 0) {
+                showAlert('error', 'Please enter candidate item IDs');
+                return;
+            }
+
+            const userAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045'; // Demo address
+
+            try {
+                const endpoint = currentAlgorithm === 'content_recommendation' ? '/socialunits/algorithm/content' : '/socialunits/algorithm/friends';
+                const payload = currentAlgorithm === 'content_recommendation' ?
+                    { user_address: userAddress, content_items: candidateItems } :
+                    { user_address: userAddress, user_list: candidateItems.map(id => `user_${id}`) };
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    displayRecommendations(result.recommendations || []);
+                } else {
+                    showAlert('error', result.error);
+                }
+            } catch (error) {
+                showAlert('error', 'Failed to generate recommendations: ' + error.message);
+            }
+        }
+
+        function displayRecommendations(recommendations) {
+            recommendationsList.innerHTML = '';
+
+            if (recommendations.length === 0) {
+                recommendationsList.innerHTML = '<p>No recommendations available</p>';
+                return;
+            }
+
+            recommendations.forEach((item, index) => {
+                const recDiv = document.createElement('div');
+                recDiv.className = 'recommendation-item';
+                recDiv.innerHTML = `
+                    <div class="recommendation-score">#${index + 1}</div>
+                    <strong>${typeof item === 'object' ? item.id || item : item}</strong><br>
+                    <small>Recommended by ${currentAlgorithm.replace('_', ' ')}</small>
+                `;
+                recommendationsList.appendChild(recDiv);
+            });
+        }
+
+        async function recordBehavior() {
+            const behaviorType = document.getElementById('behavior-type').value;
+            const behaviorData = document.getElementById('behavior-data').value;
+
+            try {
+                JSON.parse(behaviorData); // Validate JSON
+                showAlert('success', `Behavior recorded: ${behaviorType}`);
+                updateBehaviorDisplay({ recorded: behaviorType, data: behaviorData.substring(0, 50) + '...' });
+            } catch (error) {
+                showAlert('error', 'Invalid JSON in behavior data');
+            }
+        }
+
+        async function updateAlgorithmScore() {
+            // Simulate updating algorithm score
+            const newAccuracy = Math.floor(Math.random() * 20) + 80; // 80-100%
+            algorithmAccuracy.textContent = newAccuracy + '%';
+            showAlert('success', `Algorithm accuracy updated to ${newAccuracy}%`);
+        }
+
+        function updateStats() {
+            // Update stats with simulated data
+            engagementScore.textContent = Math.floor(Math.random() * 1000);
+            algorithmAccuracy.textContent = Math.floor(Math.random() * 20 + 80) + '%';
+        }
+
+        // Alert system
+        function showAlert(type, message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${type}`;
+            alertDiv.innerHTML = message;
+            alertDiv.style.position = 'fixed';
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.maxWidth = '400px';
+            alertDiv.style.zIndex = '1000';
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            // Save final behavior data
+            updateBehaviorDisplay({ session_end: new Date().toISOString() });
+        });
+    </script>
+</body>
+</html>
